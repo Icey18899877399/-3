@@ -1,0 +1,30 @@
+experiment,config,metric,value
+A. Model expansion,Logistic (L1),AUC,0.86
+A. Model expansion,Naive Bayes,AUC,0.7935
+A. Model expansion,Random Forest,AUC,0.8296
+A. Model expansion,SVM (linear),AUC,0.8563
+A. Model expansion,XGBoost,AUC,0.8679
+A. Model expansion,LightGBM,AUC,0.8627
+A. Model expansion,GBDT,AUC,0.8623
+B1. Sampling,Logistic (L1) / none,AUC,0.8647
+B1. Sampling,Logistic (L1) / smote,AUC,0.86
+B1. Sampling,Logistic (L1) / smotetomek,AUC,0.86
+B1. Sampling,Logistic (L1) / class_weight,AUC,0.8611
+B1. Sampling,Random Forest / none,AUC,0.8034
+B1. Sampling,Random Forest / smote,AUC,0.8164
+B1. Sampling,Random Forest / smotetomek,AUC,0.8234
+B1. Sampling,Random Forest / class_weight,AUC,0.8218
+B1. Sampling,XGBoost / none,AUC,0.8677
+B1. Sampling,XGBoost / smote,AUC,0.8666
+B1. Sampling,XGBoost / smotetomek,AUC,0.8673
+B1. Sampling,XGBoost / class_weight,AUC,0.8613
+B2. L1 selection,Logistic (L1) / with L1,AUC,0.86
+B2. L1 selection,Logistic (L1) / without L1,AUC,0.86
+B2. L1 selection,Random Forest / with L1,AUC,0.8296
+B2. L1 selection,Random Forest / without L1,AUC,0.8234
+B2. L1 selection,XGBoost / with L1,AUC,0.8662
+B2. L1 selection,XGBoost / without L1,AUC,0.8673
+B3. Standardization,Logistic (unscaled SALARY),AUC,0.86
+B3. Standardization,SVM (unscaled SALARY),AUC,0.8563
+B3. Standardization,Logistic (standardized),AUC,0.86
+B3. Standardization,SVM (standardized),AUC,0.8563

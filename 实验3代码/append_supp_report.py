@@ -120,10 +120,13 @@ add_para('表 6  不同采样策略下的 AUC')
 add_table(b1_rows)
 add_para('图 9  四种不平衡采样策略对 AUC 的影响（grouped bar）')
 doc.add_picture(os.path.join(FIG_DIR, 'B1_sampling_ablation.png'), width=Inches(6))
-add_para('结论：（1）对于 Logistic 与 RF，不做任何处理时 AUC 已经较高，但 SMOTE/SMOTETomek '
-         '能进一步提升 0.005~0.02；（2）XGBoost 对类别不平衡的鲁棒性最强，是否采样几乎不影响 AUC；'
-         '（3）使用模型自带的 class_weight 与显式过采样效果接近，但实现更简洁、训练更快。'
-         '若工程上注重训练效率，可直接使用 class_weight 代替 SMOTE。')
+add_para('结论：（1）对于 Logistic，反而是"不做任何采样处理"AUC 最高（0.8647），'
+         'SMOTE/SMOTETomek 几乎不带来收益甚至略有下降，说明在 L1 已经做了正则的前提下'
+         '原始不平衡数据足以给出稳定的概率排序；（2）对 Random Forest 影响最大：'
+         '不采样时 AUC 仅 0.8034，SMOTE+Tomek 后提升到 0.8234（+0.020），因为 RF 的'
+         '分裂准则对极不平衡比例敏感；（3）XGBoost 对不平衡几乎不敏感（4 种策略 AUC '
+         '波动 < 0.007），印证了 GBDT 类模型自带鲁棒处理能力；（4）class_weight 与 '
+         'SMOTE 系列效果接近，工程上若考虑训练效率，可优先选 class_weight / scale_pos_weight。')
 
 # --- B2 ---
 add_heading('9.2.2 B2：L1 特征选择消融', level=3)
@@ -139,10 +142,12 @@ add_para('表 7  L1 特征选择对 AUC 的影响')
 add_table(b2_rows)
 add_para('图 10  是否使用 L1 特征选择的 AUC 对比')
 doc.add_picture(os.path.join(FIG_DIR, 'B2_l1_fs_ablation.png'), width=Inches(5.5))
-add_para('结论：L1 特征选择对 Logistic 几乎无影响（其本身就是带 L1 的线性模型）；'
-         '对 Random Forest 与 XGBoost 而言，去掉 L1 特征选择反而能略微提升 AUC，'
-         '因为这两个模型本身具备特征选择能力，且更多原始特征带来更强的判别力。'
-         '这与 PPT 中"随机森林适合高维特征"的论断一致。')
+add_para('结论：（1）L1 特征选择对 Logistic 完全无影响（其本身就是 L1 线性模型，做不做选择都收敛到同一组系数）；'
+         '（2）对 Random Forest 而言，加上 L1 特征选择反而 AUC 更高（+0.006），'
+         '可能是因为 L1 帮忙剔除了部分对 RF 分裂无用的噪声特征；'
+         '（3）对 XGBoost 而言，去掉 L1 反而略好（+0.001），但差距在噪声范围内，'
+         'GBDT 类模型自带特征重要性筛选机制，对外部特征选择不敏感。'
+         '总体来看，L1 特征选择对线性模型必要、对树/Boosting 模型可有可无。')
 
 # --- B3 ---
 add_heading('9.2.3 B3：标准化消融', level=3)
@@ -158,20 +163,23 @@ add_para('表 8  标准化对 AUC 的影响')
 add_table(b3_rows)
 add_para('图 11  是否对 SALARY 做标准化的 AUC 对比')
 doc.add_picture(os.path.join(FIG_DIR, 'B3_standardize_ablation.png'), width=Inches(5))
-add_para('结论：本实验的 SALARY 是 1~7 的小范围离散等级，量纲差异本就不大，'
-         '所以反标准化后 AUC 仅有微小波动（< 0.005）。但是当数据集中存在'
-         '横跨多个数量级的连续变量（如征信表中的金额）时，标准化对 SVM 等基于距离的模型至关重要。'
-         '因此原 pipeline 的 StandardScaler 步骤是稳健的工程实践，应当保留。')
+add_para('结论：本实验的 SALARY 是 1~7 的小范围离散等级，且经过 L1 特征选择后是否被保留也未必，'
+         '因此反标准化后 AUC 几乎无变化（差值≈ 0）。这恰恰说明：本数据中 SALARY 不是主要驱动因素，'
+         '决定性能的是征信扩展表中已经被 StandardScaler 处理过的金额类特征。'
+         '推而广之，当数据集中存在横跨多个数量级的连续变量时，标准化对 SVM 等基于距离的模型至关重要，'
+         '原 pipeline 的 StandardScaler 步骤是稳健的工程实践，应当保留。')
 
 # ============ 十、补充实验结论 ============
 add_heading('十、补充实验总结', level=1)
 add_para('1. 模型层面：GBDT 类模型（XGBoost / LightGBM）显著优于全部 4 个基线模型，'
          '将本任务的 AUC 上限从 0.85 推高至约 0.88。综合性能与效率，推荐 LightGBM 作为生产模型，'
          'Logistic 作为可解释基线保留。')
-add_para('2. 不平衡处理：SMOTE+Tomek 对 Logistic / RF 提升明显，但对 XGBoost 几乎无效。'
-         '工程上可优先使用模型自带的 class_weight / scale_pos_weight，更简洁高效。')
-add_para('3. 特征选择：L1 特征选择对 Logistic 有用（同模型族），对 GBDT 类模型反而是负担。'
-         '推荐对线性模型用 L1，对树模型用全部特征。')
+add_para('2. 不平衡处理：SMOTE+Tomek 对 Random Forest 提升明显（+0.020），但对 Logistic '
+         '反而轻微负作用，对 XGBoost 几乎无效。说明 GBDT 类模型自带应对不平衡的鲁棒机制；'
+         '工程上对 GBDT 模型可优先使用 scale_pos_weight，对 RF 推荐 SMOTE+Tomek。')
+add_para('3. 特征选择：L1 特征选择对 Logistic 完全无影响（线性模型自身已带 L1），'
+         '对 RF 略有帮助（+0.006），对 XGBoost 影响在噪声内。'
+         '推荐：线性模型上使用 L1，树/Boosting 模型可保留全部特征或依赖模型自身的特征重要性。')
 add_para('4. 标准化：在本数据上由于 SALARY 量纲很小，影响有限；但在含金额/年龄等大尺度变量时必须保留。')
 
 doc.save(NEW_DOC)
