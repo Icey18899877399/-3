@@ -6,7 +6,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
-table_6 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_is_sharedebt.csv', sep=',')
+table_6 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_is_sharedebt.csv', sep=',')
 table_6.columns = [str.lower(i) for i in table_6.columns]
 
 type_dw_dict = {
@@ -34,4 +34,4 @@ df_continuous_mean.index = indexs
 
 table_6_handled = pd.merge(df_type_dw, df_continuous_mean, left_index=True, right_index=True)
 table_6_handled.head()
-table_6_handled.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_6.csv')
+table_6_handled.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_6.csv')

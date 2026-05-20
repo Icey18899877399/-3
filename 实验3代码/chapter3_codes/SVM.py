@@ -11,7 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 读取数据
-df = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\testafter.csv', index_col=0)
+df = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/trainafter.csv', index_col=0)
 X = df.drop(['Y'], axis=1).values
 y = df['Y'].values
 
@@ -39,7 +39,7 @@ y_prob = model.predict_proba(X_test_sel)[:, 1]
 # 保存结果（去冗余）
 output = np.column_stack((np.arange(len(y_test)), y_prob, y_test))
 np.savetxt(
-    r'D:\文档\机器学习\实验3代码\chapter3_data_handled\SVM.txt',
+    r'/home/user/-3/实验3代码/chapter3_data_handled/SVM.txt',
     output,
     fmt="%d %0.9f %d"
 )
@@ -59,7 +59,7 @@ def report_auc(y_true, y_prob, title="", output_name="", lw=2):
     plt.title(title)
     plt.legend(loc="lower right")
 
-    plt.savefig(r"D:\文档\机器学习\实验3代码\chapter3_data_handled\SVM_L1_" + output_name, dpi=800)
+    plt.savefig(r"/home/user/-3/实验3代码/chapter3_data_handled/SVM_L1_" + output_name, dpi=800)
     plt.close()
 
 # 绘图

@@ -3,7 +3,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 #table9
-table_9 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_qr_recorddtlinfo.tsv', sep='\t')
+table_9 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_qr_recorddtlinfo.tsv', sep='\t')
 table_9.columns = [str.lower(i) for i in table_9.columns]
 
 table_9['query_reason'] = table_9.query_reason.astype('str')
@@ -25,4 +25,4 @@ df_continuous_mean = pd.DataFrame(ss.fit_transform(imr.fit_transform(df_continuo
 
 table_9_handled = pd.merge(df_query_reason, df_continuous_mean, left_index=True, right_index=True)
 
-table_9_handled.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_9.csv')
+table_9_handled.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_9.csv')

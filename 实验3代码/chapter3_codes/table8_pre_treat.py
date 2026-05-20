@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 #table8
-table_8 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_qr_recordsmr.tsv', sep='\t')
+table_8 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_qr_recordsmr.tsv', sep='\t')
 table_8.columns = [str.lower(i) for i in table_8.columns]
 
 table_8['type_id'] = table_8.type_id.astype('str')
@@ -25,4 +25,4 @@ df_continuous_mean.columns = columns
 df_continuous_mean.index = indexs
 
 table_8_handled = pd.merge(df_query_reason, df_continuous_mean, left_index=True, right_index=True)
-table_8_handled.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_8.csv')
+table_8_handled.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_8.csv')

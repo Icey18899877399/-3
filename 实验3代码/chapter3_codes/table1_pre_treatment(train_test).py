@@ -3,7 +3,7 @@ import numpy as np
 import time
 # import numba 加速处理
 from collections import Counter
-fh = r"D:\文档\机器学习\实验3代码\chapter3_data\contest_basic_train.tsv"
+fh = r"/home/user/-3/实验3代码/chapter3_data/contest_basic_train.tsv"
 
 train = pd.read_csv(fh, sep="\t", header=0)
 train.isnull().sum()
@@ -79,7 +79,7 @@ df_train = train.copy()
 
 # test  测试集
 
-fh=r"D:\文档\机器学习\实验3代码\chapter3_data\contest_basic_test.tsv"
+fh=r"/home/user/-3/实验3代码/chapter3_data/contest_basic_test.tsv"
 train=pd.read_csv(fh,sep="\t", header=0)
 train.isnull().sum()
 
@@ -168,7 +168,7 @@ df_train = df_train.loc[:, intersection+['Y']]
 # print(df_test.shape)
 # print(df_train.shape)
 
-df_train.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_1_train.csv')
-df_test.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_1_test.csv')
+df_train.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_1_train.csv')
+df_test.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_1_test.csv')
 
 

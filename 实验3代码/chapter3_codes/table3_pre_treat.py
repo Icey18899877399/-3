@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 
-table_3 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_cd_ln.tsv', sep='\t')
+table_3 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_cd_ln.tsv', sep='\t')
 table_3.shape
 table_3.head()
 
@@ -131,7 +131,7 @@ table_3_handled = pd.merge(table_3_handled, df_class5_state, left_index=True, ri
 table_3_handled = pd.merge(table_3_handled, df_continuous_mean, left_index=True, right_index=True)
 table_3_handled = pd.merge(table_3_handled, df_count, left_index=True, right_index=True)
 
-table_3_handled.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_3.csv')
+table_3_handled.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_3.csv')
 
 
 

@@ -3,7 +3,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 #table10
-table_10 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_cd_ln_spl.tsv', sep='\t')
+table_10 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_cd_ln_spl.tsv', sep='\t')
 table_10.columns = [str.lower(i) for i in table_10.columns]
 table_10.type_dw.value_counts()
 type_dw_dict = {
@@ -33,4 +33,4 @@ df_continuous_mean.index = indexs
 
 table_10_handled = pd.merge(df_type_dw, df_continuous_mean, left_index=True, right_index=True)
 
-table_10_handled.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_10.csv')
+table_10_handled.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_10.csv')

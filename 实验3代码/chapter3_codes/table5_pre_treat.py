@@ -6,7 +6,7 @@ import time
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
-table_3 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_cd_ln.tsv', sep='\t')
+table_3 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_cd_ln.tsv', sep='\t')
 table_3.shape
 table_3.head()
 
@@ -65,7 +65,7 @@ class5_state_dict = {
 }
 
 #table5
-table_5 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_is_creditcue.csv', sep=',')
+table_5 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_is_creditcue.csv', sep=',')
 table_5.columns = [str.lower(i) for i in table_5.columns]
 #字符转化为小写
 
@@ -81,4 +81,4 @@ df_continuous_mean = pd.DataFrame(ss.fit_transform(imr.fit_transform(df_continuo
 df_continuous_mean.columns = columns
 df_continuous_mean.index = indexs
 
-df_continuous_mean.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_5.csv')
+df_continuous_mean.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_5.csv')

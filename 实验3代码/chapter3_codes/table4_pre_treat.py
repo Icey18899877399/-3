@@ -39,7 +39,7 @@ guarantee_type_dict = {
 }
 
 #table4
-table_4 = pd.read_csv(r'D:\文档\机器学习\实验3代码\chapter3_data\contest_ext_crd_cd_lnd.tsv', sep='\t')
+table_4 = pd.read_csv(r'/home/user/-3/实验3代码/chapter3_data/contest_ext_crd_cd_lnd.tsv', sep='\t')
 
 table_4.loc[:, ['state', 'currency', 'guarantee_type', 'cardtype']].head()
 
@@ -87,4 +87,4 @@ table_4_handled = pd.merge(table_4_handled, df_count, left_index=True, right_ind
 table_4_handled = pd.merge(table_4_handled, df_currency, left_index=True, right_index=True)
 table_4_handled = pd.merge(table_4_handled, df_continuous_mean, left_index=True, right_index=True)
 
-table_4_handled.to_csv(r'D:\文档\机器学习\实验3代码\chapter3_data_handled\table_4.csv')
+table_4_handled.to_csv(r'/home/user/-3/实验3代码/chapter3_data_handled/table_4.csv')
