@@ -471,27 +471,26 @@ print('\n图片已保存: clustering_comparison_pca.png')
 all_names = ['JC', 'FMI', 'RI', 'DBI']
 km_vals = [metrics_km[m] for m in all_names]
 db_vals = [metrics_db[m] for m in all_names]
+max_val = max(max(km_vals), max(db_vals))
 
-fig, ax = plt.subplots(figsize=(6.5, 3.8))
+fig, ax = plt.subplots(figsize=(7, 3.8))
 y_pos = np.arange(len(all_names))
 h = 0.32
-c_km, c_db = NPG[3], NPG[0]  # 深蓝 vs 红
+c_km, c_db = NPG[3], NPG[0]
 
 bars_km = ax.barh(y_pos + h/2, km_vals, h, color=c_km, label='K-Means',
                    edgecolor='white', linewidth=0.4)
 bars_db = ax.barh(y_pos - h/2, db_vals, h, color=c_db, label='DBSCAN',
                    edgecolor='white', linewidth=0.4)
 for bar, val in zip(bars_km, km_vals):
-    ax.text(val + 0.015, bar.get_y() + bar.get_height()/2,
+    ax.text(val + 0.02, bar.get_y() + bar.get_height()/2,
             f'{val:.3f}', va='center', fontsize=8.5, color=c_km, fontweight='bold')
 for bar, val in zip(bars_db, db_vals):
-    ax.text(val + 0.015, bar.get_y() + bar.get_height()/2,
+    ax.text(val + 0.02, bar.get_y() + bar.get_height()/2,
             f'{val:.3f}', va='center', fontsize=8.5, color=c_db, fontweight='bold')
 
-ax.set_yticks(y_pos)
-ax.set_yticklabels(all_names)
 ax.set_xlabel('Score')
-ax.set_xlim(0, 1.42)
+ax.set_xlim(0, max_val * 1.18)
 ax.legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
           loc='upper right')
 
