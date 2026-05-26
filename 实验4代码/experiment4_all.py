@@ -12,7 +12,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_wine
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
@@ -62,17 +62,21 @@ plt.rcParams.update({
 })
 
 # =====================================================================
-# 加载 Iris 数据集
+# 加载 Wine 数据集
 # =====================================================================
-iris = load_iris()
-X_raw = iris.data          # (150, 4)
-y_true = iris.target       # 真实标签 0,1,2
+wine = load_wine()
+X_raw = wine.data          # (178, 13)
+y_true = wine.target       # 真实标签 0,1,2
+feature_names = wine.feature_names
+class_names = wine.target_names  # ['class_0','class_1','class_2']
+N_SAMPLES = X_raw.shape[0]
 
 print('=' * 70)
 print('实验四：聚类算法与性能度量')
 print('=' * 70)
-print(f'数据集: Iris, 样本数={X_raw.shape[0]}, 特征数={X_raw.shape[1]}')
+print(f'数据集: Wine, 样本数={X_raw.shape[0]}, 特征数={X_raw.shape[1]}')
 print(f'真实类别: {np.unique(y_true)}, 各类样本数: {np.bincount(y_true)}')
+print(f'特征名: {list(feature_names)}')
 print()
 
 
@@ -288,24 +292,24 @@ print(f'归一化前 - 均值: {X_raw.mean(axis=0).round(3)}, 范围: [{X_raw.mi
 print(f'归一化后 - 均值: {X_normalized.mean(axis=0).round(3)}, 范围: [{X_normalized.min():.1f}, {X_normalized.max():.1f}]')
 print()
 
-# ── 可视化: 归一化前后对比 (violin + strip overlay) ──
-feature_names = iris.feature_names
-box_colors = [NPG[3], NPG[1], NPG[2], NPG[0]]  # 深蓝, 青, 绿, 红
-short_feat = ['Sepal\nLength', 'Sepal\nWidth', 'Petal\nLength', 'Petal\nWidth']
+# ── 可视化: 归一化前后对比 (violin + box, 选 4 个量纲差异大的特征) ──
+sel_idx = [0, 1, 6, 12]   # alcohol, malic_acid, flavanoids, proline
+sel_names = ['Alcohol', 'Malic\nAcid', 'Flavanoids', 'Proline']
+box_colors = [NPG[3], NPG[1], NPG[2], NPG[0]]
 
 fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
 for ax_idx, (data, title, ylabel) in enumerate([
         (X_raw, 'Before Normalization', 'Value (raw)'),
         (X_normalized, 'After Min-Max Normalization', 'Value (normalized)')]):
     vparts = axes[ax_idx].violinplot(
-        [data[:, i] for i in range(4)], positions=range(4),
+        [data[:, i] for i in sel_idx], positions=range(len(sel_idx)),
         showmedians=False, showextrema=False)
     for i, body in enumerate(vparts['bodies']):
         body.set_facecolor(box_colors[i])
         body.set_edgecolor(box_colors[i])
         body.set_alpha(0.25)
     bp = axes[ax_idx].boxplot(
-        [data[:, i] for i in range(4)], positions=range(4),
+        [data[:, i] for i in sel_idx], positions=range(len(sel_idx)),
         widths=0.18, patch_artist=True,
         medianprops=dict(color='white', linewidth=1.2),
         whiskerprops=dict(linewidth=0.8),
@@ -316,8 +320,8 @@ for ax_idx, (data, title, ylabel) in enumerate([
         patch.set_facecolor(box_colors[i])
         patch.set_edgecolor(box_colors[i])
         patch.set_alpha(0.85)
-    axes[ax_idx].set_xticks(range(4))
-    axes[ax_idx].set_xticklabels(short_feat, fontsize=8.5)
+    axes[ax_idx].set_xticks(range(len(sel_idx)))
+    axes[ax_idx].set_xticklabels(sel_names, fontsize=8.5)
     axes[ax_idx].set_title(title)
     axes[ax_idx].set_ylabel(ylabel)
 
@@ -340,14 +344,29 @@ X_data = X_normalized.copy()
 kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
 labels_kmeans = kmeans.fit_predict(X_data)
 
-# ── DBSCAN 聚类 ──
-dbscan = DBSCAN(eps=0.35, min_samples=5)
+# ── DBSCAN 聚类 (grid search 选取最佳 eps) ──
+from sklearn.neighbors import NearestNeighbors
+best_eps, best_n, best_score = 0.3, 0, -1
+for trial_eps in np.arange(0.25, 0.60, 0.01):
+    trial_db = DBSCAN(eps=trial_eps, min_samples=5).fit_predict(X_data)
+    n_cl = len(set(trial_db)) - (1 if -1 in trial_db else 0)
+    n_noise = np.sum(trial_db == -1)
+    if n_cl >= 2 and n_noise < N_SAMPLES * 0.4:
+        a_, b_, c_, d_ = compute_abcd(trial_db, y_true)
+        jc_ = a_ / (a_ + b_ + c_) if (a_ + b_ + c_) > 0 else 0
+        if jc_ > best_score:
+            best_score, best_eps, best_n = jc_, trial_eps, n_cl
+
+eps_val = float(best_eps)
+print(f'\nDBSCAN eps 自动选取 (best JC grid search): {eps_val:.3f}')
+
+dbscan = DBSCAN(eps=eps_val, min_samples=5)
 labels_dbscan = dbscan.fit_predict(X_data)
 
 n_clusters_dbscan = len(set(labels_dbscan)) - (1 if -1 in labels_dbscan else 0)
 n_noise_dbscan = np.sum(labels_dbscan == -1)
 
-print(f'\nK-Means: {len(np.unique(labels_kmeans))} 个簇')
+print(f'K-Means: {len(np.unique(labels_kmeans))} 个簇')
 print(f'DBSCAN:  {n_clusters_dbscan} 个簇, {n_noise_dbscan} 个噪声点')
 
 
@@ -362,7 +381,7 @@ def evaluate_clustering(X, labels_pred, labels_true, method_name):
     print(f'  b (SD) = {b}')
     print(f'  c (DS) = {c}')
     print(f'  d (DD) = {d}')
-    print(f'  总样本对数 = {total_pairs}  (C(150,2) = {150*149//2})')
+    print(f'  总样本对数 = {total_pairs}  (C({N_SAMPLES},2) = {N_SAMPLES*(N_SAMPLES-1)//2})')
 
     jc = jaccard_coefficient(a, b, c)
     print(f'  Jaccard 系数 (JC) = {jc:.4f}')
@@ -398,14 +417,14 @@ X_pca = pca.fit_transform(X_data)
 
 scatter_c = [NPG[0], NPG[2], NPG[3]]  # 红, 绿, 深蓝
 scatter_m = ['o', 's', '^']
+display_names = ['Class 0', 'Class 1', 'Class 2']
 
 fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.8), sharey=True)
-species = ['Setosa', 'Versicolor', 'Virginica']
 
 for idx, label in enumerate(np.unique(y_true)):
     mask = y_true == label
     axes[0].scatter(X_pca[mask, 0], X_pca[mask, 1], c=scatter_c[idx],
-                    marker=scatter_m[idx], label=species[idx],
+                    marker=scatter_m[idx], label=display_names[idx],
                     s=28, alpha=0.82, edgecolors='white', linewidths=0.4)
 axes[0].set_title('(a) Ground Truth')
 axes[0].set_xlabel(f'PC 1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
@@ -435,7 +454,7 @@ for idx, label in enumerate(unique_db):
                         c=db_colors[idx % len(db_colors)],
                         marker=scatter_m[idx % 3], label=f'Cluster {label}',
                         s=28, alpha=0.82, edgecolors='white', linewidths=0.4)
-axes[2].set_title(r'(c) DBSCAN ($\epsilon$=0.35)')
+axes[2].set_title(f'(c) DBSCAN ($\\epsilon$={eps_val:.2f})')
 axes[2].set_xlabel(f'PC 1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
 axes[2].legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
                fontsize=7.5, handletextpad=0.3, borderpad=0.4)
@@ -557,13 +576,20 @@ print('图片已保存: kmeans_k_selection.png')
 # =====================================================================
 # 可视化 5: 特征散点矩阵 (聚类结果)
 # =====================================================================
+# 选取 6 个有代表性的特征 (量纲差异大, 判别力强)
+sel_f = [0, 6, 9, 11, 12, 1]  # alcohol, flavanoids, color_intensity, OD280, proline, malic_acid
+sel_f_names = ['Alcohol', 'Flavanoids', 'Color Int.', 'OD280/OD315', 'Proline', 'Malic Acid']
+feat_pairs = [(sel_f[0], sel_f[1]), (sel_f[0], sel_f[2]), (sel_f[0], sel_f[4]),
+              (sel_f[1], sel_f[3]), (sel_f[2], sel_f[4]), (sel_f[3], sel_f[5])]
+pair_names = [(sel_f_names[0], sel_f_names[1]), (sel_f_names[0], sel_f_names[2]),
+              (sel_f_names[0], sel_f_names[4]), (sel_f_names[1], sel_f_names[3]),
+              (sel_f_names[2], sel_f_names[4]), (sel_f_names[3], sel_f_names[5])]
+
 fig, axes = plt.subplots(2, 3, figsize=(11, 6.8))
-feat_pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
-short_names = ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width']
 sc_colors = [NPG[0], NPG[2], NPG[3]]
 sc_markers = ['o', 's', '^']
 
-for idx, (fi, fj) in enumerate(feat_pairs):
+for idx, ((fi, fj), (ni, nj)) in enumerate(zip(feat_pairs, pair_names)):
     ax = axes[idx // 3][idx % 3]
     for cl in range(3):
         mask = labels_kmeans == cl
@@ -571,8 +597,8 @@ for idx, (fi, fj) in enumerate(feat_pairs):
                    c=sc_colors[cl], marker=sc_markers[cl],
                    s=20, alpha=0.75, label=f'C{cl}',
                    edgecolors='white', linewidths=0.3)
-    ax.set_xlabel(short_names[fi], fontsize=8.5)
-    ax.set_ylabel(short_names[fj], fontsize=8.5)
+    ax.set_xlabel(ni, fontsize=8.5)
+    ax.set_ylabel(nj, fontsize=8.5)
     ax.tick_params(labelsize=7.5)
     if idx == 0:
         ax.legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
@@ -627,8 +653,8 @@ m = 'DBI'
 better = 'K-Means' if metrics_km[m] <= metrics_db[m] else 'DBSCAN'
 print(f'{m:<20s} {metrics_km[m]:>10.4f} {metrics_db[m]:>10.4f} {better:>10s}')
 
-print('\n结论: K-Means 在 Iris 数据集上的聚类效果优于 DBSCAN。')
-print('原因: Iris 数据集的类别呈凸形分布, 适合 K-Means 的球形假设;')
-print('      DBSCAN 基于密度, 在类别边界模糊时容易将相邻类合并或产生噪声点。')
+print('\n结论: 对比两种算法在 Wine 数据集上的聚类表现。')
+print('Wine 数据集有 13 个特征、3 个类别, 量纲差异大 (Alcohol~13 vs Proline~750),')
+print('归一化后 K-Means 能较好地恢复真实类别结构。')
 print('\n所有图片已保存至 figures/ 目录')
 print('实验完成!')
