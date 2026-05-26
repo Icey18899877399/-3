@@ -21,25 +21,44 @@ from itertools import combinations
 FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'figures')
 os.makedirs(FIG_DIR, exist_ok=True)
 
-# ── 顶刊配色 (Nature / Science 常用) ──
-PALETTE = ['#4C72B0', '#DD8452', '#55A868', '#C44E52',
-           '#8172B3', '#937860', '#DA8BC3', '#8C8C8C']
+# ── NPG (Nature Publishing Group) 配色 — ggsci "nrc" 色板 ──
+# 来源: https://nanx.me/ggsci/reference/pal_npg.html
+NPG = ['#E64B35', '#4DBBD5', '#00A087', '#3C5488',
+       '#F39B7F', '#8491B4', '#91D1C2', '#DC0000',
+       '#7E6148', '#B09C85']
+
+# Okabe-Ito 色板 (Nature Methods 推荐, 色盲友好)
+OI = ['#0072B2', '#E69F00', '#009E73', '#D55E00',
+      '#56B4E9', '#CC79A7', '#F0E442', '#000000']
+
+PALETTE = NPG  # 主色板
+
 plt.rcParams.update({
-    'font.family': 'serif',
-    'font.serif': ['Times New Roman', 'DejaVu Serif'],
-    'font.size': 11,
-    'axes.labelsize': 12,
-    'axes.titlesize': 13,
-    'xtick.labelsize': 10,
-    'ytick.labelsize': 10,
-    'legend.fontsize': 9,
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
+    'font.size': 10,
+    'axes.labelsize': 11,
+    'axes.titlesize': 12,
+    'axes.titleweight': 'bold',
+    'xtick.labelsize': 9,
+    'ytick.labelsize': 9,
+    'legend.fontsize': 8.5,
+    'legend.framealpha': 0.9,
     'figure.dpi': 300,
     'savefig.dpi': 300,
     'savefig.bbox': 'tight',
+    'savefig.pad_inches': 0.15,
     'axes.spines.top': False,
     'axes.spines.right': False,
-    'axes.linewidth': 0.8,
+    'axes.linewidth': 0.6,
     'axes.grid': False,
+    'xtick.major.width': 0.6,
+    'ytick.major.width': 0.6,
+    'xtick.major.size': 3.5,
+    'ytick.major.size': 3.5,
+    'lines.linewidth': 1.4,
+    'lines.markersize': 5,
+    'patch.linewidth': 0.5,
 })
 
 # =====================================================================
@@ -269,29 +288,40 @@ print(f'归一化前 - 均值: {X_raw.mean(axis=0).round(3)}, 范围: [{X_raw.mi
 print(f'归一化后 - 均值: {X_normalized.mean(axis=0).round(3)}, 范围: [{X_normalized.min():.1f}, {X_normalized.max():.1f}]')
 print()
 
-# ── 可视化: 归一化前后对比 ──
+# ── 可视化: 归一化前后对比 (violin + strip overlay) ──
 feature_names = iris.feature_names
-fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-bp0 = axes[0].boxplot([X_raw[:, i] for i in range(4)], patch_artist=True,
-                       widths=0.5, medianprops=dict(color='black', linewidth=1.2))
-for patch, color in zip(bp0['boxes'], PALETTE[:4]):
-    patch.set_facecolor(color)
-    patch.set_alpha(0.7)
-axes[0].set_xticklabels(['SL', 'SW', 'PL', 'PW'])
-axes[0].set_title('Before Normalization')
-axes[0].set_ylabel('Value')
+box_colors = [NPG[3], NPG[1], NPG[2], NPG[0]]  # 深蓝, 青, 绿, 红
+short_feat = ['Sepal\nLength', 'Sepal\nWidth', 'Petal\nLength', 'Petal\nWidth']
 
-bp1 = axes[1].boxplot([X_normalized[:, i] for i in range(4)], patch_artist=True,
-                       widths=0.5, medianprops=dict(color='black', linewidth=1.2))
-for patch, color in zip(bp1['boxes'], PALETTE[:4]):
-    patch.set_facecolor(color)
-    patch.set_alpha(0.7)
-axes[1].set_xticklabels(['SL', 'SW', 'PL', 'PW'])
-axes[1].set_title('After Min-Max Normalization')
-axes[1].set_ylabel('Normalized Value')
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
+for ax_idx, (data, title, ylabel) in enumerate([
+        (X_raw, 'Before Normalization', 'Value (raw)'),
+        (X_normalized, 'After Min-Max Normalization', 'Value (normalized)')]):
+    vparts = axes[ax_idx].violinplot(
+        [data[:, i] for i in range(4)], positions=range(4),
+        showmedians=False, showextrema=False)
+    for i, body in enumerate(vparts['bodies']):
+        body.set_facecolor(box_colors[i])
+        body.set_edgecolor(box_colors[i])
+        body.set_alpha(0.25)
+    bp = axes[ax_idx].boxplot(
+        [data[:, i] for i in range(4)], positions=range(4),
+        widths=0.18, patch_artist=True,
+        medianprops=dict(color='white', linewidth=1.2),
+        whiskerprops=dict(linewidth=0.8),
+        capprops=dict(linewidth=0.8),
+        flierprops=dict(marker='o', markersize=3, alpha=0.5,
+                        markerfacecolor='#888888', markeredgecolor='none'))
+    for i, patch in enumerate(bp['boxes']):
+        patch.set_facecolor(box_colors[i])
+        patch.set_edgecolor(box_colors[i])
+        patch.set_alpha(0.85)
+    axes[ax_idx].set_xticks(range(4))
+    axes[ax_idx].set_xticklabels(short_feat, fontsize=8.5)
+    axes[ax_idx].set_title(title)
+    axes[ax_idx].set_ylabel(ylabel)
 
-fig.suptitle('Feature Distribution: Before vs After Normalization', fontsize=13, fontweight='bold', y=1.02)
-plt.tight_layout()
+plt.tight_layout(w_pad=3)
 plt.savefig(os.path.join(FIG_DIR, 'normalization_comparison.png'))
 plt.close()
 print('图片已保存: normalization_comparison.png')
@@ -366,107 +396,93 @@ metrics_db = evaluate_clustering(X_data, labels_dbscan, y_true, 'DBSCAN')
 pca = PCA(n_components=2, random_state=42)
 X_pca = pca.fit_transform(X_data)
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 4.2))
+scatter_c = [NPG[0], NPG[2], NPG[3]]  # 红, 绿, 深蓝
+scatter_m = ['o', 's', '^']
+
+fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.8), sharey=True)
 species = ['Setosa', 'Versicolor', 'Virginica']
 
 for idx, label in enumerate(np.unique(y_true)):
     mask = y_true == label
-    axes[0].scatter(X_pca[mask, 0], X_pca[mask, 1], c=PALETTE[idx],
-                    label=species[idx], s=25, alpha=0.75, edgecolors='white',
-                    linewidths=0.3)
-axes[0].set_title('Ground Truth', fontweight='bold')
-axes[0].set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
-axes[0].set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)')
-axes[0].legend(frameon=True, fancybox=False, edgecolor='#cccccc', fontsize=8)
+    axes[0].scatter(X_pca[mask, 0], X_pca[mask, 1], c=scatter_c[idx],
+                    marker=scatter_m[idx], label=species[idx],
+                    s=28, alpha=0.82, edgecolors='white', linewidths=0.4)
+axes[0].set_title('(a) Ground Truth')
+axes[0].set_xlabel(f'PC 1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
+axes[0].set_ylabel(f'PC 2 ({pca.explained_variance_ratio_[1]*100:.1f}%)')
+axes[0].legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
+               fontsize=7.5, handletextpad=0.3, borderpad=0.4)
 
 for idx, label in enumerate(np.unique(labels_kmeans)):
     mask = labels_kmeans == label
-    axes[1].scatter(X_pca[mask, 0], X_pca[mask, 1], c=PALETTE[idx],
-                    label=f'Cluster {label}', s=25, alpha=0.75,
-                    edgecolors='white', linewidths=0.3)
-axes[1].set_title('K-Means (k=3)', fontweight='bold')
-axes[1].set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
-axes[1].set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)')
-axes[1].legend(frameon=True, fancybox=False, edgecolor='#cccccc', fontsize=8)
+    axes[1].scatter(X_pca[mask, 0], X_pca[mask, 1], c=scatter_c[idx],
+                    marker=scatter_m[idx], label=f'Cluster {label}',
+                    s=28, alpha=0.82, edgecolors='white', linewidths=0.4)
+axes[1].set_title('(b) K-Means (k = 3)')
+axes[1].set_xlabel(f'PC 1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
+axes[1].legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
+               fontsize=7.5, handletextpad=0.3, borderpad=0.4)
 
 unique_db = sorted(set(labels_dbscan))
+db_colors = [NPG[0], NPG[2], NPG[3], NPG[1]]
 for idx, label in enumerate(unique_db):
     mask = labels_dbscan == label
     if label == -1:
-        axes[2].scatter(X_pca[mask, 0], X_pca[mask, 1], c='#8C8C8C',
-                        label='Noise', s=15, alpha=0.5, marker='x')
+        axes[2].scatter(X_pca[mask, 0], X_pca[mask, 1], c='#AAAAAA',
+                        label='Noise', s=15, alpha=0.55, marker='x', linewidths=0.8)
     else:
-        axes[2].scatter(X_pca[mask, 0], X_pca[mask, 1], c=PALETTE[idx % len(PALETTE)],
-                        label=f'Cluster {label}', s=25, alpha=0.75,
-                        edgecolors='white', linewidths=0.3)
-axes[2].set_title(f'DBSCAN (eps=0.35)', fontweight='bold')
-axes[2].set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
-axes[2].set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)')
-axes[2].legend(frameon=True, fancybox=False, edgecolor='#cccccc', fontsize=8)
+        axes[2].scatter(X_pca[mask, 0], X_pca[mask, 1],
+                        c=db_colors[idx % len(db_colors)],
+                        marker=scatter_m[idx % 3], label=f'Cluster {label}',
+                        s=28, alpha=0.82, edgecolors='white', linewidths=0.4)
+axes[2].set_title(r'(c) DBSCAN ($\epsilon$=0.35)')
+axes[2].set_xlabel(f'PC 1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
+axes[2].legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
+               fontsize=7.5, handletextpad=0.3, borderpad=0.4)
 
-fig.suptitle('Clustering Results Comparison (PCA Projection)', fontsize=14,
-             fontweight='bold', y=1.03)
-plt.tight_layout()
+plt.tight_layout(w_pad=1.5)
 plt.savefig(os.path.join(FIG_DIR, 'clustering_comparison_pca.png'))
 plt.close()
 print('\n图片已保存: clustering_comparison_pca.png')
 
 
 # =====================================================================
-# 可视化 2: 性能指标对比条形图
+# 可视化 2: 性能指标对比条形图 (水平)
 # =====================================================================
-metrics_names = ['JC', 'FMI', 'RI', 'DBI']
-km_vals = [metrics_km[m] for m in metrics_names]
-db_vals = [metrics_db[m] for m in metrics_names]
+all_names = ['JC', 'FMI', 'RI', 'DBI']
+km_vals = [metrics_km[m] for m in all_names]
+db_vals = [metrics_db[m] for m in all_names]
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+fig, ax = plt.subplots(figsize=(6.5, 3.8))
+y_pos = np.arange(len(all_names))
+h = 0.32
+c_km, c_db = NPG[3], NPG[0]  # 深蓝 vs 红
 
-# 左图: 外部指标 (JC, FMI, RI) - 越大越好
-ext_names = ['JC', 'FMI', 'RI']
-ext_km = [metrics_km[m] for m in ext_names]
-ext_db = [metrics_db[m] for m in ext_names]
-x_pos = np.arange(len(ext_names))
-w = 0.32
-bars1 = axes[0].bar(x_pos - w/2, ext_km, w, color=PALETTE[0], label='K-Means',
-                     edgecolor='white', linewidth=0.5)
-bars2 = axes[0].bar(x_pos + w/2, ext_db, w, color=PALETTE[1], label='DBSCAN',
-                     edgecolor='white', linewidth=0.5)
-for bar, val in zip(bars1, ext_km):
-    axes[0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
-                 f'{val:.3f}', ha='center', va='bottom', fontsize=8)
-for bar, val in zip(bars2, ext_db):
-    axes[0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
-                 f'{val:.3f}', ha='center', va='bottom', fontsize=8)
-axes[0].set_xticks(x_pos)
-axes[0].set_xticklabels(ext_names)
-axes[0].set_ylabel('Score')
-axes[0].set_title('External Metrics (higher is better)', fontweight='bold')
-axes[0].set_ylim(0, 1.15)
-axes[0].legend(frameon=True, fancybox=False, edgecolor='#cccccc')
+bars_km = ax.barh(y_pos + h/2, km_vals, h, color=c_km, label='K-Means',
+                   edgecolor='white', linewidth=0.4)
+bars_db = ax.barh(y_pos - h/2, db_vals, h, color=c_db, label='DBSCAN',
+                   edgecolor='white', linewidth=0.4)
+for bar, val in zip(bars_km, km_vals):
+    ax.text(val + 0.015, bar.get_y() + bar.get_height()/2,
+            f'{val:.3f}', va='center', fontsize=8.5, color=c_km, fontweight='bold')
+for bar, val in zip(bars_db, db_vals):
+    ax.text(val + 0.015, bar.get_y() + bar.get_height()/2,
+            f'{val:.3f}', va='center', fontsize=8.5, color=c_db, fontweight='bold')
 
-# 右图: 内部指标 (DBI) - 越小越好
-int_names = ['DBI']
-int_km = [metrics_km['DBI']]
-int_db = [metrics_db['DBI']]
-x_pos2 = np.arange(len(int_names))
-b1 = axes[1].bar(x_pos2 - w/2, int_km, w, color=PALETTE[0], label='K-Means',
-                  edgecolor='white', linewidth=0.5)
-b2 = axes[1].bar(x_pos2 + w/2, int_db, w, color=PALETTE[1], label='DBSCAN',
-                  edgecolor='white', linewidth=0.5)
-for bar, val in zip(b1, int_km):
-    axes[1].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02,
-                 f'{val:.3f}', ha='center', va='bottom', fontsize=8)
-for bar, val in zip(b2, int_db):
-    axes[1].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02,
-                 f'{val:.3f}', ha='center', va='bottom', fontsize=8)
-axes[1].set_xticks(x_pos2)
-axes[1].set_xticklabels(int_names)
-axes[1].set_ylabel('Score')
-axes[1].set_title('Internal Metric (lower is better)', fontweight='bold')
-axes[1].legend(frameon=True, fancybox=False, edgecolor='#cccccc')
+ax.set_yticks(y_pos)
+ax.set_yticklabels(all_names)
+ax.set_xlabel('Score')
+ax.set_xlim(0, 1.42)
+ax.legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
+          loc='upper right')
 
-fig.suptitle('Performance Metrics: K-Means vs DBSCAN', fontsize=14,
-             fontweight='bold', y=1.03)
+ax.axhline(y=2.5, color='#cccccc', linewidth=0.5, linestyle='--')
+ax.set_yticks(y_pos)
+labels_txt = ['JC\n(higher=better)', 'FMI\n(higher=better)',
+              'RI\n(higher=better)', 'DBI\n(lower=better)']
+ax.set_yticklabels(labels_txt, fontsize=8.5)
+
+ax.invert_yaxis()
 plt.tight_layout()
 plt.savefig(os.path.join(FIG_DIR, 'metrics_comparison.png'))
 plt.close()
@@ -474,30 +490,24 @@ print('图片已保存: metrics_comparison.png')
 
 
 # =====================================================================
-# 可视化 3: 距离函数对比
+# 可视化 3: 距离函数对比 (viridis 色系)
 # =====================================================================
-fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
-
-# 左图: 距离矩阵热力图 (欧氏)
 from scipy.spatial.distance import pdist, squareform
 D_euc = squareform(pdist(X_data[:30], metric='euclidean'))
 D_man = squareform(pdist(X_data[:30], metric='cityblock'))
 
-im0 = axes[0].imshow(D_euc, cmap='YlOrRd', aspect='auto')
-axes[0].set_title('Euclidean Distance (p=2)', fontweight='bold')
-axes[0].set_xlabel('Sample Index')
-axes[0].set_ylabel('Sample Index')
-fig.colorbar(im0, ax=axes[0], shrink=0.8)
+fig, axes = plt.subplots(1, 2, figsize=(9.5, 3.8))
+for ax, D, title in zip(axes, [D_euc, D_man],
+                          ['(a) Euclidean Distance (p = 2)',
+                           '(b) Manhattan Distance (p = 1)']):
+    im = ax.imshow(D, cmap='viridis', aspect='equal', interpolation='nearest')
+    ax.set_title(title)
+    ax.set_xlabel('Sample Index')
+    ax.set_ylabel('Sample Index')
+    cb = fig.colorbar(im, ax=ax, shrink=0.82, pad=0.02)
+    cb.outline.set_linewidth(0.4)
 
-im1 = axes[1].imshow(D_man, cmap='YlOrRd', aspect='auto')
-axes[1].set_title('Manhattan Distance (p=1)', fontweight='bold')
-axes[1].set_xlabel('Sample Index')
-axes[1].set_ylabel('Sample Index')
-fig.colorbar(im1, ax=axes[1], shrink=0.8)
-
-fig.suptitle('Distance Matrix Heatmaps (First 30 Samples)', fontsize=13,
-             fontweight='bold', y=1.03)
-plt.tight_layout()
+plt.tight_layout(w_pad=2.5)
 plt.savefig(os.path.join(FIG_DIR, 'distance_heatmaps.png'))
 plt.close()
 print('图片已保存: distance_heatmaps.png')
@@ -519,32 +529,26 @@ for k in k_range:
     a, b, c, _ = compute_abcd(pred, y_true)
     jcs_k.append(jaccard_coefficient(a, b, c))
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+line_cfgs = [
+    ('o-', NPG[3], '(a) Elbow Method',           'Inertia (SSE)'),
+    ('s-', NPG[0], '(b) Davies-Bouldin Index',   'DBI'),
+    ('D-', NPG[2], '(c) Jaccard Coefficient',    'JC'),
+]
+data_series = [inertias, dbis_k, jcs_k]
+opt_k = 3
 
-axes[0].plot(list(k_range), inertias, 'o-', color=PALETTE[0], linewidth=1.5,
-             markersize=6, markerfacecolor='white', markeredgewidth=1.5)
-axes[0].set_xlabel('Number of Clusters (k)')
-axes[0].set_ylabel('Inertia (SSE)')
-axes[0].set_title('Elbow Method', fontweight='bold')
-axes[0].xaxis.set_major_locator(MaxNLocator(integer=True))
+fig, axes = plt.subplots(1, 3, figsize=(13, 3.5))
+for ax, (fmt, col, title, ylabel), vals in zip(axes, line_cfgs, data_series):
+    ax.plot(list(k_range), vals, fmt, color=col, linewidth=1.5,
+            markersize=5.5, markerfacecolor='white', markeredgewidth=1.4,
+            markeredgecolor=col)
+    ax.axvline(x=opt_k, color='#bbbbbb', linewidth=0.7, linestyle='--', zorder=0)
+    ax.set_xlabel('Number of Clusters (k)')
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-axes[1].plot(list(k_range), dbis_k, 's-', color=PALETTE[1], linewidth=1.5,
-             markersize=6, markerfacecolor='white', markeredgewidth=1.5)
-axes[1].set_xlabel('Number of Clusters (k)')
-axes[1].set_ylabel('DBI')
-axes[1].set_title('Davies-Bouldin Index vs k', fontweight='bold')
-axes[1].xaxis.set_major_locator(MaxNLocator(integer=True))
-
-axes[2].plot(list(k_range), jcs_k, 'D-', color=PALETTE[2], linewidth=1.5,
-             markersize=6, markerfacecolor='white', markeredgewidth=1.5)
-axes[2].set_xlabel('Number of Clusters (k)')
-axes[2].set_ylabel('JC')
-axes[2].set_title('Jaccard Coefficient vs k', fontweight='bold')
-axes[2].xaxis.set_major_locator(MaxNLocator(integer=True))
-
-fig.suptitle('K-Means: Effect of Cluster Number on Metrics', fontsize=14,
-             fontweight='bold', y=1.03)
-plt.tight_layout()
+plt.tight_layout(w_pad=2)
 plt.savefig(os.path.join(FIG_DIR, 'kmeans_k_selection.png'))
 plt.close()
 print('图片已保存: kmeans_k_selection.png')
@@ -553,60 +557,56 @@ print('图片已保存: kmeans_k_selection.png')
 # =====================================================================
 # 可视化 5: 特征散点矩阵 (聚类结果)
 # =====================================================================
-fig, axes = plt.subplots(2, 3, figsize=(12, 7.5))
+fig, axes = plt.subplots(2, 3, figsize=(11, 6.8))
 feat_pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
-short_names = ['SL', 'SW', 'PL', 'PW']
+short_names = ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width']
+sc_colors = [NPG[0], NPG[2], NPG[3]]
+sc_markers = ['o', 's', '^']
 
 for idx, (fi, fj) in enumerate(feat_pairs):
     ax = axes[idx // 3][idx % 3]
     for cl in range(3):
         mask = labels_kmeans == cl
-        ax.scatter(X_data[mask, fi], X_data[mask, fj], c=PALETTE[cl],
-                   s=18, alpha=0.7, label=f'C{cl}',
-                   edgecolors='white', linewidths=0.2)
-    ax.set_xlabel(short_names[fi])
-    ax.set_ylabel(short_names[fj])
+        ax.scatter(X_data[mask, fi], X_data[mask, fj],
+                   c=sc_colors[cl], marker=sc_markers[cl],
+                   s=20, alpha=0.75, label=f'C{cl}',
+                   edgecolors='white', linewidths=0.3)
+    ax.set_xlabel(short_names[fi], fontsize=8.5)
+    ax.set_ylabel(short_names[fj], fontsize=8.5)
+    ax.tick_params(labelsize=7.5)
     if idx == 0:
-        ax.legend(frameon=True, fancybox=False, edgecolor='#cccccc',
-                  fontsize=7, loc='best')
+        ax.legend(frameon=True, fancybox=False, edgecolor='#d0d0d0',
+                  fontsize=7, loc='best', handletextpad=0.2)
 
-fig.suptitle('K-Means Clustering: Pairwise Feature Scatter', fontsize=14,
-             fontweight='bold', y=1.02)
-plt.tight_layout()
+plt.tight_layout(h_pad=2, w_pad=1.5)
 plt.savefig(os.path.join(FIG_DIR, 'kmeans_scatter_matrix.png'))
 plt.close()
 print('图片已保存: kmeans_scatter_matrix.png')
 
 
 # =====================================================================
-# 可视化 6: a, b, c, d 对比饼图
+# 可视化 6: a, b, c, d 对比 — 环形图 (donut chart)
 # =====================================================================
-fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+fig, axes = plt.subplots(1, 2, figsize=(8.5, 3.8))
 pie_labels = ['a (SS)', 'b (SD)', 'c (DS)', 'd (DD)']
-pie_colors = [PALETTE[2], PALETTE[3], PALETTE[1], PALETTE[0]]
+pie_colors = [NPG[2], NPG[0], NPG[4], NPG[3]]  # 绿, 红, 淡橙, 深蓝
 
 km_abcd = [metrics_km['a'], metrics_km['b'], metrics_km['c'], metrics_km['d']]
 db_abcd = [metrics_db['a'], metrics_db['b'], metrics_db['c'], metrics_db['d']]
 
-wedges0, texts0, autotexts0 = axes[0].pie(
-    km_abcd, labels=pie_labels, colors=pie_colors, autopct='%1.1f%%',
-    startangle=90, pctdistance=0.75,
-    wedgeprops=dict(edgecolor='white', linewidth=1))
-for t in autotexts0:
-    t.set_fontsize(8)
-axes[0].set_title('K-Means', fontweight='bold')
+for ax, data, title in zip(axes, [km_abcd, db_abcd], ['(a) K-Means', '(b) DBSCAN']):
+    wedges, texts, autotexts = ax.pie(
+        data, labels=pie_labels, colors=pie_colors, autopct='%1.1f%%',
+        startangle=90, pctdistance=0.78,
+        wedgeprops=dict(width=0.45, edgecolor='white', linewidth=1.5))
+    for t in autotexts:
+        t.set_fontsize(7.5)
+        t.set_color('#333333')
+    for t in texts:
+        t.set_fontsize(8)
+    ax.set_title(title, pad=10)
 
-wedges1, texts1, autotexts1 = axes[1].pie(
-    db_abcd, labels=pie_labels, colors=pie_colors, autopct='%1.1f%%',
-    startangle=90, pctdistance=0.75,
-    wedgeprops=dict(edgecolor='white', linewidth=1))
-for t in autotexts1:
-    t.set_fontsize(8)
-axes[1].set_title('DBSCAN', fontweight='bold')
-
-fig.suptitle('Distribution of Pair Types (a, b, c, d)', fontsize=13,
-             fontweight='bold', y=1.02)
-plt.tight_layout()
+plt.tight_layout(w_pad=2)
 plt.savefig(os.path.join(FIG_DIR, 'abcd_pie_chart.png'))
 plt.close()
 print('图片已保存: abcd_pie_chart.png')
